@@ -2,12 +2,12 @@
 
 set -xeo pipefail
 
-BROWSER_URL=${MEETING_URL}
-SCREEN_WIDTH=1920
-SCREEN_HEIGHT=1080
+BROWSER_URL='http://localhost:8080/amazon-chime-live-events/transcoding/sink.html'
+SCREEN_WIDTH=720
+SCREEN_HEIGHT=480
 SCREEN_RESOLUTION=${SCREEN_WIDTH}x${SCREEN_HEIGHT}
 COLOR_DEPTH=24
-X_SERVER_NUM=2
+X_SERVER_NUM=0
 VIDEO_BITRATE=3000
 VIDEO_FRAMERATE=30
 VIDEO_GOP=$((VIDEO_FRAMERATE * 2))
@@ -16,6 +16,9 @@ AUDIO_SAMPLERATE=44100
 AUDIO_CHANNELS=2
 
 RTMP_URL=${RTMP_URL}
+
+pkill pulse || echo "pulse was not running"
+pkill firefox || echo "firefox was not running"
 
 # Start PulseAudio server so Firefox will have somewhere to which to send audio
 pulseaudio -D --exit-idle-time=-1
@@ -29,19 +32,19 @@ export DISPLAY=:${X_SERVER_NUM}.0
 sleep 0.5  # Ensure this has started before moving on
 
 # Create a new Firefox profile for capturing preferences for this
-firefox --no-remote --new-instance --createprofile "foo4 /tmp/foo4"
+firefox --no-remote --new-instance --createprofile "foo7 /tmp/foo7"
 
 # Install the OpenH264 plugin for Firefox
-mkdir -p /tmp/foo4/gmp-gmpopenh264/1.8.1.1/
-pushd /tmp/foo4/gmp-gmpopenh264/1.8.1.1 >& /dev/null
+mkdir -p /tmp/foo7/gmp-gmpopenh264/1.8.1.1/
+pushd /tmp/foo7/gmp-gmpopenh264/1.8.1.1 >& /dev/null
 curl -s -O http://ciscobinary.openh264.org/openh264-linux64-2e1774ab6dc6c43debb0b5b628bdf122a391d521.zip
-unzip openh264-linux64-2e1774ab6dc6c43debb0b5b628bdf122a391d521.zip
+unzip -n openh264-linux64-2e1774ab6dc6c43debb0b5b628bdf122a391d521.zip
 rm -f openh264-linux64-2e1774ab6dc6c43debb0b5b628bdf122a391d521.zip
 popd >& /dev/null
 
 # Set the Firefox preferences to enable automatic media playing with no user
 # interaction and the use of the OpenH264 plugin.
-cat <<EOF >> /tmp/foo4/prefs.js
+cat <<EOF >> /tmp/foo7/prefs.js
 user_pref("media.autoplay.default", 0);
 user_pref("media.autoplay.enabled.user-gestures-needed", false);
 user_pref("media.navigator.permission.disabled", true);
@@ -49,6 +52,8 @@ user_pref("media.gmp-gmpopenh264.abi", "x86_64-gcc3");
 user_pref("media.gmp-gmpopenh264.lastUpdate", 1571534329);
 user_pref("media.gmp-gmpopenh264.version", "1.8.1.1");
 user_pref("doh-rollout.doorhanger-shown", true);
+user_pref("media.setsinkid.enabled", true);
+user_pref("browser.cache.disk.enable", false);
 EOF
 
 # Start Firefox browser and point it at the URL we want to capture
@@ -57,7 +62,7 @@ EOF
 # argument list or else only a white screen will result in the capture for some
 # reason.
 firefox \
-  -P foo4 \
+  -P foo7 \
   --width ${SCREEN_WIDTH} \
   --height ${SCREEN_HEIGHT} \
   --new-instance \
@@ -77,7 +82,7 @@ xdotool mousemove 1 1 click 1  # Move mouse out of the way so it doesn't trigger
 # NB: These arguments have a very specific order. Seemingly inocuous changes in
 # argument order can have pretty drastic effects, so be careful when
 # adding/removing/reordering arguments here.
-ffmpeg \
+ffmpeg -y\
   -hide_banner -loglevel error \
   -nostdin \
   -s ${SCREEN_RESOLUTION} \
@@ -85,8 +90,9 @@ ffmpeg \
   -draw_mouse 0 \
   -f x11grab \
     -i ${DISPLAY} \
+  -f pulse -i 0 \
   -f pulse \
-    -ac 2 \
+    -ac 1 \
     -i default \
   -c:v libx264 \
     -pix_fmt yuv420p \
@@ -96,10 +102,14 @@ ffmpeg \
     -minrate ${VIDEO_BITRATE} \
     -maxrate ${VIDEO_BITRATE} \
     -g ${VIDEO_GOP} \
-  -filter_complex "adelay=delays=1000|1000" \
+  -filter_complex "[1:a][2:a]join=inputs=2:channel_layout=mono[a]" \
+    -map 0 \
+    -map "[a]"? \
+    -map 1 \
+    -map 2 \
   -c:a aac \
     -b:a ${AUDIO_BITRATE} \
     -ac ${AUDIO_CHANNELS} \
     -ar ${AUDIO_SAMPLERATE} \
-  -f flv ${RTMP_URL}
+  -f matroska 14.mkv
 
