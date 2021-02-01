@@ -10,10 +10,10 @@ COLOR_DEPTH=24
 X_SERVER_NUM=0
 VIDEO_BITRATE=3000
 VIDEO_FRAMERATE=30
-VIDEO_GOP=$((VIDEO_FRAMERATE * 2))
+VIDEO_GOP=$((VIDEO_FRAMERATE))
 AUDIO_BITRATE=160k
 AUDIO_SAMPLERATE=44100
-AUDIO_CHANNELS=2
+AUDIO_CHANNELS=1
 
 RTMP_URL=${RTMP_URL}
 
@@ -22,9 +22,14 @@ pkill firefox || echo "firefox was not running"
 
 # Start PulseAudio server so Firefox will have somewhere to which to send audio
 pulseaudio -D --exit-idle-time=-1
-pacmd load-module module-virtual-sink sink_name=v1  # Load a virtual sink as `v1`
-pacmd set-default-sink v1  # Set the `v1` as the default sink device
-pacmd set-default-source v1.monitor  # Set the monitor of the v1 sink to be the default source
+#pacmd load-module module-virtual-sink sink_name=v1  # Load a virtual sink as `v1`
+#pacmd set-default-sink v1  # Set the `v1` as the default sink device
+#pacmd set-default-source v1.monitor  # Set the monitor of the v1 sink to be the default source
+
+pacmd load-module module-null-sink sink_name=MySink
+pacmd update-sink-proplist MySink device.description=MySink
+pacmd load-module module-null-sink sink_name=MySink2
+pacmd update-sink-proplist MySink2 device.description=MySink2
 
 # Start X11 virtual framebuffer so Firefox will have somewhere to draw
 Xvfb :${X_SERVER_NUM} -ac -screen 0 ${SCREEN_RESOLUTION}x${COLOR_DEPTH} > /dev/null 2>&1 &
@@ -82,6 +87,7 @@ xdotool mousemove 1 1 click 1  # Move mouse out of the way so it doesn't trigger
 # NB: These arguments have a very specific order. Seemingly inocuous changes in
 # argument order can have pretty drastic effects, so be careful when
 # adding/removing/reordering arguments here.
+# pulse0 = dummy, pulse1= Virtual Sink v1
 ffmpeg -y\
   -hide_banner -loglevel error \
   -nostdin \
@@ -91,9 +97,7 @@ ffmpeg -y\
   -f x11grab \
     -i ${DISPLAY} \
   -f pulse -i 0 \
-  -f pulse \
-    -ac 1 \
-    -i default \
+  -f pulse -i 1 \
   -c:v libx264 \
     -pix_fmt yuv420p \
     -profile:v main \
@@ -102,14 +106,11 @@ ffmpeg -y\
     -minrate ${VIDEO_BITRATE} \
     -maxrate ${VIDEO_BITRATE} \
     -g ${VIDEO_GOP} \
-  -filter_complex "[1:a][2:a]join=inputs=2:channel_layout=mono[a]" \
-    -map 0 \
-    -map "[a]"? \
-    -map 1 \
-    -map 2 \
-  -c:a aac \
-    -b:a ${AUDIO_BITRATE} \
-    -ac ${AUDIO_CHANNELS} \
-    -ar ${AUDIO_SAMPLERATE} \
-  -f matroska 14.mkv
+  -filter_complex "[1:a][2:a]join=inputs=2:channel_layout=stereo[a]" -ac 1 \
+  -filter_complex "[1:a][2:a]join=inputs=2:channel_layout=stereo[b]" -ac 1 \
+    -map 0:v sadecevideo.mkv \
+    -map 1:a p0.mp3 \
+    -map 2:a p1.mp3 \
+    -map "[a]"? p0p1.mp3 \
+    -map 0:v -map "[b]":a p0p1video.mp4
 
