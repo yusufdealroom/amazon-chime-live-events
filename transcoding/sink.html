@@ -1,0 +1,102 @@
+<!DOCTYPE html> 
+<html> 
+
+<head>
+    <style>
+    table {
+        font-family: arial, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+    
+    td, th {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+    }
+    
+    tr:nth-child(even) {
+        background-color: #dddddd;
+    }
+    </style>
+    </head>
+<body> 
+
+<script>
+  (async () => {
+      await queryUserMedia();
+      await getListOfDevices();
+
+    function queryUserMedia() {
+        return   navigator.mediaDevices.getUserMedia({
+            "audio": true, 
+            "video": false
+        })
+    }
+
+    async function getListOfDevices() {
+        const all_devs = await navigator.mediaDevices.enumerateDevices();
+
+        tbl  = document.getElementById('devs');
+
+        all_devs.map( ( dev, index ) => {
+            var tr = tbl.insertRow();
+            tr.insertCell().appendChild(document.createTextNode(dev.kind));
+            tr.insertCell().appendChild(document.createTextNode(dev.deviceId));
+            tr.insertCell().appendChild(document.createTextNode(dev.label));
+        } );
+
+        document.getElementById('count').appendChild( document.createTextNode(all_devs.length))
+
+        const audioouts = all_devs.filter( ({ kind }) => kind === "audiooutput" );
+
+        var select2 = document.getElementById("select2");
+
+        const options = audioouts.map( ( dev, index ) => {
+            const name = dev.label || ('audio out ' + index );
+            option = new Option( name , dev.deviceId );
+            this.select2.appendChild(option);
+            this.select1.appendChild(new Option( name , dev.deviceId ));
+            return new Option( name , dev.deviceId );
+        } );
+
+        //select1.append.apply( select1, options );
+        select1.onchange = e => aud1.setSinkId( select1.value );
+        select2.onchange = e => aud2.setSinkId( select2.value );
+        //select2.onchange = function() {alert(this.value);}
+
+        function setSelectedIndex(el, index){
+            el.selectedIndex = index;
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        setSelectedIndex(select1, 0);
+        setSelectedIndex(select2, 1);
+
+    }
+
+})().catch( console.error );
+
+</script>
+
+
+    <audio controls id="aud1" autoplay src="./inputs/2stereo_aac_mono_ac1_44100.mp3" loop></audio>
+    <select id="select1">
+    </select>
+
+    <audio controls id="aud2" autoplay src="./inputs/sound2.mp3" loop></audio>
+    <select id="select2">
+    </select>
+    <div id="count"></div>
+
+    <table id ="devs">
+        <tr>
+          <th>Kind</th>
+          <th>DeviceId</th>
+          <th>Label</th>
+        </tr>
+      </table>
+        
+
+</body> 
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html> 
+<html> 
+<body> 
+
+  <script>
+  
+  const start = async function(a, b) {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+    const audioDevices = devices.filter(device => device.kind === 'audiooutput');
+    const audio = document.getElementById('video1');
+    //const audio = document.createElement('audio');
+    await audio.setSinkId(audioDevices[0].deviceId);
+    console.log('Audio is being played on ' + audio.sinkId);
+  }
+
+
+  start();
+
+  </script>
+
+<video id ="video1" width="400" controls autoplay>
+  <source src="mov_bbb.mp4" type="video/mp4">
+  <source src="mov_bbb.ogg" type="video/ogg">
+  Your browser does not support HTML video.
+</video>
+
+<video width="400" controls autoplay >
+    <source src="mov_bbb.mp4" type="video/mp4">
+    <source src="mov_bbb.ogg" type="video/ogg">
+    Your browser does not support HTML video.
+</video>
+<p id="demo"></p>
+
+</body> 
+</html>
