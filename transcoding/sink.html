@@ -20,7 +20,7 @@
     }
     </style>
     </head>
-<body> 
+
 
 <script>
   (async () => {
@@ -50,19 +50,26 @@
 
         const audioouts = all_devs.filter( ({ kind }) => kind === "audiooutput" );
 
+        var select1 = document.getElementById("select1");
         var select2 = document.getElementById("select2");
+        var select3 = document.getElementById("select3");
+        var select4 = document.getElementById("select4");
 
         const options = audioouts.map( ( dev, index ) => {
             const name = dev.label || ('audio out ' + index );
             option = new Option( name , dev.deviceId );
             this.select2.appendChild(option);
             this.select1.appendChild(new Option( name , dev.deviceId ));
+            this.select3.appendChild(new Option( name , dev.deviceId ));
+            this.select4.appendChild(new Option( name , dev.deviceId ));
             return new Option( name , dev.deviceId );
         } );
 
         //select1.append.apply( select1, options );
         select1.onchange = e => aud1.setSinkId( select1.value );
         select2.onchange = e => aud2.setSinkId( select2.value );
+        select3.onchange = e => aud3.setSinkId( select3.value );
+        select4.onchange = e => aud4.setSinkId( select4.value );
         //select2.onchange = function() {alert(this.value);}
 
         function setSelectedIndex(el, index){
@@ -72,21 +79,47 @@
 
         setSelectedIndex(select1, 0);
         setSelectedIndex(select2, 1);
+        setSelectedIndex(select3, 2);
+        setSelectedIndex(select4, 3);
 
     }
 
 })().catch( console.error );
 
+
+function startTime() {
+  var today = new Date();
+  var h = today.getHours();
+  var m = today.getMinutes();
+  var s = today.getSeconds();
+  m = checkTime(m);
+  s = checkTime(s);
+  document.getElementById('time').innerHTML =
+  h + ":" + m + ":" + s;
+  var t = setTimeout(startTime, 500);
+}
+function checkTime(i) {
+  if (i < 10) {i = "0" + i};  // add zero in front of numbers < 10
+  return i;
+}
+
 </script>
 
-
+<body onload="startTime()">
+    <p>
     <audio controls id="aud1" autoplay src="./inputs/2stereo_aac_mono_ac1_44100.mp3" loop></audio>
-    <select id="select1">
-    </select>
-
+    <select id="select1"></select>
+    <p>
     <audio controls id="aud2" autoplay src="./inputs/sound2.mp3" loop></audio>
     <select id="select2">
     </select>
+    <p>
+    <audio controls id="aud3" autoplay src="./inputs/file_example_MP3_700KB.mp3" loop></audio>
+    <select id="select3"></select>
+    <p>
+    <audio controls id="aud4" autoplay src="./inputs/Haydn_Cello_Concerto_D-1.mp3" loop></audio>
+    <select id="select4"></select>
+    <div id="time"></div>
     <div id="count"></div>
 
     <table id ="devs">
@@ -99,4 +132,5 @@
         
 
 </body> 
+
 </html>

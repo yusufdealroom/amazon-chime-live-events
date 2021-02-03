@@ -1,8 +1,8 @@
 #!/bin/bash
 
-set -xeo pipefail
+#set -xeo pipefail
 
-BROWSER_URL='http://localhost:8080/amazon-chime-live-events/transcoding/sink.html'
+BROWSER_URL=${MEETING_URL}
 SCREEN_WIDTH=720
 SCREEN_HEIGHT=480
 SCREEN_RESOLUTION=${SCREEN_WIDTH}x${SCREEN_HEIGHT}
@@ -10,13 +10,18 @@ COLOR_DEPTH=24
 X_SERVER_NUM=0
 VIDEO_BITRATE=3000
 VIDEO_FRAMERATE=30
-VIDEO_GOP=$((VIDEO_FRAMERATE))
+VIDEO_GOP=$((VIDEO_FRAMERATE * 2))
 AUDIO_BITRATE=160k
 AUDIO_SAMPLERATE=44100
 AUDIO_CHANNELS=1
 
-RTMP_URL=${RTMP_URL}
+RTMP_URL1=rtmps://29d142160793.global-contribute.live-video.net:443/app/sk_eu-west-1_O1mpPZ4vn8y7_adz7ekds4hoQlhZRoKDpL3XLyqzYRy
+RTMP_URL2=rtmps://29d142160793.global-contribute.live-video.net:443/app/sk_eu-west-1_ut1Ov5JhB4PM_VndsUAMG1Kq0Dy3OWaR8UXKi6vd7Qg
+RTMP_URL3=rtmps://29d142160793.global-contribute.live-video.net:443/app/sk_eu-west-1_7CBJ18csCjci_YZxNW28tXViemH4sZl7RymYoy3PQUz
+RTMP_URL4=rtmps://29d142160793.global-contribute.live-video.net:443/app/sk_eu-west-1_yjG2UVbNBqrT_DXOmduEA5JFUgD1Zbxp5l1S9eAGkka
 
+
+BROWSER_URL='http://localhost:8080/amazon-chime-live-events/transcoding/sink.html'
 pkill pulse || echo "pulse was not running"
 pkill firefox || echo "firefox was not running"
 sleep 1
@@ -35,6 +40,11 @@ else
   pacmd update-sink-proplist MySink device.description=MySink
   pacmd load-module module-null-sink sink_name=MySink2
   pacmd update-sink-proplist MySink2 device.description=MySink2
+
+  pacmd load-module module-null-sink sink_name=MySink3
+  pacmd update-sink-proplist MySink3 device.description=MySink3
+  pacmd load-module module-null-sink sink_name=MySink4
+  pacmd update-sink-proplist MySink4 device.description=MySink4
 fi
 
 
@@ -103,23 +113,40 @@ ffmpeg -y\
   -draw_mouse 0 \
   -f x11grab \
     -i ${DISPLAY} \
-    -f pulse -i MySink.monitor \
-    -f pulse -i MySink2.monitor \
+  -f pulse -i MySink.monitor \
+  -f pulse -i MySink2.monitor \
   -c:v libx264 \
     -pix_fmt yuv420p \
     -profile:v main \
     -preset veryfast \
-    -x264opts "nal-hrd=cbr:no-scenecut" \
     -minrate ${VIDEO_BITRATE} \
     -maxrate ${VIDEO_BITRATE} \
     -g ${VIDEO_GOP} \
-    -filter_complex \
-    "[1:a][2:a]amerge=inputs=2[a];[1:a][2:a]amerge=inputs=2[1_2]"\
-    -map 0 0.flv\
-    -map 1 -ac 1 1.mp3 \
-    -map 2 -ac 1 2.mp3 \
-    -map "[1_2]" -ac 1 1_2.mp3 \
-    -map 0 -map 1 -ac 1 1_0.flv \
-    -map 0 -map 2 -ac 1 2_0.flv \
-    -map 0 -map "[a]" full.flv\
+    -map 0 -f flv -map 1  ${RTMP_URL1} \
+  -c:v libx264 \
+    -pix_fmt yuv420p \
+    -profile:v main \
+    -preset veryfast \
+    -minrate ${VIDEO_BITRATE} \
+    -maxrate ${VIDEO_BITRATE} \
+    -g ${VIDEO_GOP} \
+    -map 0 -f flv -map 2  ${RTMP_URL2} \
+  -c:v libx264 \
+    -pix_fmt yuv420p \
+    -profile:v main \
+    -preset veryfast \
+    -minrate ${VIDEO_BITRATE} \
+    -maxrate ${VIDEO_BITRATE} \
+    -g ${VIDEO_GOP} \
+    -map 0 -f flv -map 3  ${RTMP_URL3} \
+  -c:v libx264 \
+    -pix_fmt yuv420p \
+    -profile:v main \
+    -preset veryfast \
+    -minrate ${VIDEO_BITRATE} \
+    -maxrate ${VIDEO_BITRATE} \
+    -g ${VIDEO_GOP} \
+    -map 0 -f flv -map 4  ${RTMP_URL4} \
+  
+      
 
