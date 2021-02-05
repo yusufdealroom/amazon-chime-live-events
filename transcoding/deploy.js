@@ -7,9 +7,9 @@ const fs = require("fs");
 // Parameters
 let region = 'us-east-1';
 let imageId = ``;
-let bucket = ``;
-let stack = ``;
-let ecrRepositoryName = ``;
+let bucket = `dealroom-aws-chime-bucket2`;
+let stack = `dealroom-aws-chime-stack2`;
+let ecrRepositoryName = `dealroom-aws-chime-repo2`;
 let ecrRepositoryURI = ``;
 
 function usage() {
@@ -131,6 +131,12 @@ function parseArgs() {
 }
 
 function spawnOrFail(command, args, options) {
+  options = {
+    ...options,
+    shell: true
+  };
+  console.log(`--> ${command} ${args.join(' ')}`);
+
   const cmd = spawnSync(command, args, options);
   if (cmd.error) {
     console.log(`Command ${command} failed with ${cmd.error.code}`);

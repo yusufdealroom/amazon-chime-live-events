@@ -1,13 +1,13 @@
 #!/bin/bash
 
-#set -xeo pipefail
+set -xeo pipefail
 
 BROWSER_URL=${MEETING_URL}
 SCREEN_WIDTH=720
 SCREEN_HEIGHT=480
 SCREEN_RESOLUTION=${SCREEN_WIDTH}x${SCREEN_HEIGHT}
 COLOR_DEPTH=24
-X_SERVER_NUM=0
+X_SERVER_NUM=2
 VIDEO_BITRATE=3000
 VIDEO_FRAMERATE=30
 VIDEO_GOP=$((VIDEO_FRAMERATE * 2))
@@ -19,9 +19,8 @@ RTMP_URL1=rtmps://29d142160793.global-contribute.live-video.net:443/app/sk_eu-we
 RTMP_URL2=rtmps://29d142160793.global-contribute.live-video.net:443/app/sk_eu-west-1_ut1Ov5JhB4PM_VndsUAMG1Kq0Dy3OWaR8UXKi6vd7Qg
 RTMP_URL3=rtmps://29d142160793.global-contribute.live-video.net:443/app/sk_eu-west-1_7CBJ18csCjci_YZxNW28tXViemH4sZl7RymYoy3PQUz
 RTMP_URL4=rtmps://29d142160793.global-contribute.live-video.net:443/app/sk_eu-west-1_yjG2UVbNBqrT_DXOmduEA5JFUgD1Zbxp5l1S9eAGkka
+#BROWSER_URL=https://dealroom-html.s3-eu-west-1.amazonaws.com/sink.html
 
-
-BROWSER_URL='http://localhost:8080/amazon-chime-live-events/transcoding/sink.html'
 pkill pulse || echo "pulse was not running"
 pkill firefox || echo "firefox was not running"
 sleep 1
@@ -115,6 +114,8 @@ ffmpeg -y\
     -i ${DISPLAY} \
   -f pulse -i MySink.monitor \
   -f pulse -i MySink2.monitor \
+  -f pulse -i MySink3.monitor \
+  -f pulse -i MySink4.monitor \
   -c:v libx264 \
     -pix_fmt yuv420p \
     -profile:v main \

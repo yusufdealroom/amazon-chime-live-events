@@ -12,7 +12,8 @@ RUN /usr/bin/apt-get update &&  /usr/bin/apt-get upgrade -y && /usr/bin/apt-get 
         ffmpeg \
         xdotool \
         curl \
-        unzip
+        unzip \
+        curl 
 
 COPY run.sh /
 RUN chmod +x /run.sh
