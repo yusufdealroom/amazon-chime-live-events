@@ -1,3 +1,3 @@
 #!/bin/bash
 
-node deploy.js -b dealroom-publisher-bucket -s dealroom-publisher-stack -n dealroom-publisher -r eu-west-1
+node ./deploy.js -b video-pubsliher-bucket -s video-publisher-stack -n video-publisher-repo1 -r eu-west-1

@@ -15,7 +15,7 @@ RUN /usr/bin/apt-get update &&  /usr/bin/apt-get upgrade -y && /usr/bin/apt-get 
         unzip \
         curl 
 
-COPY run.sh /
-RUN chmod +x /run.sh
+COPY copy.sh /
+RUN chmod +x /copy.sh
 
-ENTRYPOINT ["/run.sh"]
+ENTRYPOINT ["/copy.sh"]
